@@ -12,6 +12,7 @@ dist/
 build/
 .DS_Store
 logs/
+.sdd/bug_fix/
 data/*.db
 data/*.db-shm
 data/*.db-wal
