@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>员工端 — 智能客服系统</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="shell-header">
+      <div class="shell-logo">智能客服</div>
+      <nav class="shell-nav">
+        <a href="02-employee.html" class="active">员工端</a>
+        <a href="03-agent.html">坐席端</a>
+        <a href="04-knowledge.html">知识库</a>
+      </nav>
+      <div class="shell-user">张三 ▼</div>
+    </header>
+
+    <div class="shell-body">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <button class="btn btn-block" onclick="newSession()">+ 新对话</button>
+        </div>
+        <div class="session-list">
+          <div class="session-item active" onclick="selectSession(this, 'active')">
+            <div class="session-title">请假流程咨询</div>
+            <div class="session-meta">
+              <span>今天 14:32</span>
+              <span class="tag tag-processing">AI对话中</span>
+            </div>
+          </div>
+          <div class="session-item" onclick="selectSession(this, 'queuing')">
+            <div class="session-title">VPN 无法连接</div>
+            <div class="session-meta">
+              <span>今天 11:20</span>
+              <span class="tag tag-warning">排队中</span>
+            </div>
+          </div>
+          <div class="session-item" onclick="selectSession(this, 'completed')">
+            <div class="session-title">报销流程说明</div>
+            <div class="session-meta">
+              <span>昨天 16:45</span>
+              <span class="tag tag-success">已完成</span>
+            </div>
+          </div>
+          <div class="session-item" onclick="selectSession(this, 'active')">
+            <div class="session-title">年假余额查询</div>
+            <div class="session-meta">
+              <span>06-04 10:15</span>
+              <span class="tag tag-processing">AI对话中</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <div class="chat-header" id="chatHeader">请假流程咨询</div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="message-row ai">
+            <span class="message-label">智能助手</span>
+            <div class="message-bubble">您好，我是企业内部智能助手，有什么可以帮您的？</div>
+          </div>
+          <div class="message-row user">
+            <span class="message-label">我</span>
+            <div class="message-bubble">请问公司的请假流程是什么？</div>
+          </div>
+          <div class="message-row ai">
+            <span class="message-label">智能助手</span>
+            <div class="message-bubble">
+              根据《员工手册》规定，请假流程如下：<br><br>
+              1. 提前在 OA 系统提交请假申请<br>
+              2. 直属主管审批（1 个工作日内）<br>
+              3. 人事部门备案<br>
+              4. 年假需提前 3 个工作日申请
+              <div class="cite-card">
+                <div class="cite-title">📄 员工手册.md · 第 3 章</div>
+                <div class="cite-preview">「员工请假应提前通过 OA 系统提交申请，经直属主管审批后生效。年假须提前 3 个工作日申请…」</div>
+                <a href="#">查看原文 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-area" id="inputArea">
+          <div class="chat-input-row">
+            <textarea id="msgInput" placeholder="输入您的问题…" rows="2"></textarea>
+            <div class="chat-actions">
+              <button class="btn" onclick="transferHuman()">转人工</button>
+              <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function selectSession(el, status) {
+      document.querySelectorAll('.session-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      const title = el.querySelector('.session-title').textContent;
+      document.getElementById('chatHeader').textContent = title;
+      const inputArea = document.getElementById('inputArea');
+      if (status === 'completed') {
+        inputArea.innerHTML = '<div class="chat-disabled">该会话已结束，不可继续发送消息</div>';
+      } else {
+        inputArea.innerHTML = `
+          <div class="chat-input-row">
+            <textarea id="msgInput" placeholder="输入您的问题…" rows="2"></textarea>
+            <div class="chat-actions">
+              <button class="btn" onclick="transferHuman()">转人工</button>
+              <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+            </div>
+          </div>`;
+      }
+    }
+
+    function newSession() {
+      document.getElementById('chatHeader').textContent = '新对话';
+      document.getElementById('chatMessages').innerHTML = `
+        <div class="message-row ai">
+          <span class="message-label">智能助手</span>
+          <div class="message-bubble">您好，我是企业内部智能助手，有什么可以帮您的？</div>
+        </div>`;
+      document.getElementById('inputArea').innerHTML = `
+        <div class="chat-input-row">
+          <textarea id="msgInput" placeholder="输入您的问题…" rows="2"></textarea>
+          <div class="chat-actions">
+            <button class="btn" onclick="transferHuman()">转人工</button>
+            <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+          </div>
+        </div>`;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('msgInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const msgs = document.getElementById('chatMessages');
+      msgs.innerHTML += `
+        <div class="message-row user">
+          <span class="message-label">我</span>
+          <div class="message-bubble">${text}</div>
+        </div>
+        <div class="message-row ai">
+          <span class="message-label">智能助手</span>
+          <div class="message-bubble">正在检索知识库并生成回答…（原型演示）</div>
+        </div>`;
+      input.value = '';
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function transferHuman() {
+      if (confirm('确认转接人工客服？您的会话将进入排队队列。')) {
+        alert('已转入人工排队，请前往坐席端查看工单。（原型演示：跳转坐席端）');
+        window.location.href = '03-agent.html';
+      }
+    }
+  </script>
+</body>
+</html>

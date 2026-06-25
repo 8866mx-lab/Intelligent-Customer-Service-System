@@ -1,0 +1,18 @@
+{
+
+  "stage": "development_complete",
+
+  "mode": "new",
+
+  "design_ready": true,
+
+  "development_ready": true,
+
+  "current_task": null,
+
+  "blocked": false,
+
+  "notes": "T-001～T-018 全部 passed；详见 docs/startup.md 启动与 E2E 验收路径。"
+
+}
+

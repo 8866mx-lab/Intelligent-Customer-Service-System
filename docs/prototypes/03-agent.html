@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>坐席端 — 智能客服系统</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="shell-header">
+      <div class="shell-logo">智能客服</div>
+      <nav class="shell-nav">
+        <a href="02-employee.html">员工端</a>
+        <a href="03-agent.html" class="active">坐席端</a>
+        <a href="04-knowledge.html">知识库</a>
+      </nav>
+      <div class="shell-user">张三 ▼</div>
+    </header>
+
+    <div class="shell-body">
+      <aside class="sidebar agent">
+        <div class="ticket-group-title">待处理 (2)</div>
+        <div class="session-list">
+          <div class="session-item active" onclick="selectTicket(this, 'pending')">
+            <div class="session-title">#1024 · 李四</div>
+            <div class="session-meta">
+              <span>VPN 无法连接</span>
+              <span class="tag tag-default">待处理</span>
+            </div>
+          </div>
+          <div class="session-item" onclick="selectTicket(this, 'pending')">
+            <div class="session-title">#1025 · 王五</div>
+            <div class="session-meta">
+              <span>打印机故障</span>
+              <span class="tag tag-default">待处理</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticket-group-title">处理中 (1)</div>
+        <div class="session-list">
+          <div class="session-item" onclick="selectTicket(this, 'processing')">
+            <div class="session-title">#1020 · 赵六</div>
+            <div class="session-meta">
+              <span>请假流程咨询</span>
+              <span class="tag tag-processing">处理中</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticket-group-title">已完成</div>
+        <div class="session-list">
+          <div class="session-item" onclick="selectTicket(this, 'completed')">
+            <div class="session-title">#1018 · 钱七</div>
+            <div class="session-meta">
+              <span>报销流程说明</span>
+              <span class="tag tag-success">已完成</span>
+            </div>
+          </div>
+          <div class="session-item" onclick="selectTicket(this, 'completed')">
+            <div class="session-title">#1015 · 孙八</div>
+            <div class="session-meta">
+              <span>会议室预订</span>
+              <span class="tag tag-success">已完成</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-panel" id="mainPanel">
+        <div class="chat-header" id="ticketHeader">
+          工单 #1024 · 李四 · <span class="tag tag-default" id="ticketStatus">待处理</span>
+          <button class="btn btn-primary" id="acceptBtn" style="float:right;margin-top:-4px;" onclick="acceptTicket()">接单</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="message-row user">
+            <span class="message-label">李四（员工）</span>
+            <div class="message-bubble">公司的 VPN 连不上了，提示认证失败，怎么办？</div>
+          </div>
+          <div class="message-row ai">
+            <span class="message-label">智能助手（历史）</span>
+            <div class="message-bubble">
+              抱歉，我未能从知识库中找到 VPN 认证失败的具体解决方案，建议您转接人工客服。
+              <div class="cite-card">
+                <div class="cite-title">📄 IT指南.md · 第 2 章</div>
+                <div class="cite-preview">「VPN 连接问题请联系 IT 服务台…」（相似度不足 0.8，未直答）</div>
+              </div>
+            </div>
+          </div>
+          <div class="message-row user">
+            <span class="message-label">李四（员工）</span>
+            <div class="message-bubble">【已转人工】</div>
+          </div>
+        </div>
+
+        <div class="chat-input-area" id="inputArea">
+          <div class="chat-disabled" id="pendingHint">请先点击「接单」开始处理此工单</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    let ticketState = 'pending';
+
+    function selectTicket(el, status) {
+      document.querySelectorAll('.session-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      ticketState = status;
+      const parts = el.querySelector('.session-title').textContent.split(' · ');
+      const id = parts[0];
+      const name = parts[1];
+      const summary = el.querySelector('.session-meta span').textContent;
+
+      const statusMap = { pending: ['待处理', 'tag-default'], processing: ['处理中', 'tag-processing'], completed: ['已完成', 'tag-success'] };
+      const [label, cls] = statusMap[status];
+
+      document.getElementById('ticketHeader').innerHTML = `
+        工单 ${id} · ${name} · <span class="tag ${cls}" id="ticketStatus">${label}</span>
+        ${status === 'pending' ? '<button class="btn btn-primary" id="acceptBtn" style="float:right;margin-top:-4px;" onclick="acceptTicket()">接单</button>' : ''}`;
+
+      renderInputArea(status);
+    }
+
+    function renderInputArea(status) {
+      const area = document.getElementById('inputArea');
+      if (status === 'pending') {
+        area.innerHTML = '<div class="chat-disabled" id="pendingHint">请先点击「接单」开始处理此工单</div>';
+      } else if (status === 'completed') {
+        area.innerHTML = '<div class="chat-disabled">该工单已结束</div>';
+      } else {
+        area.innerHTML = `
+          <textarea id="replyInput" placeholder="输入回复内容…" rows="+2" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;margin-bottom:12px;"></textarea>
+          <div class="agent-toolbar">
+            <button class="btn" onclick="toggleSuggest()">智能回复</button>
+            <select id="category">
+              <option value="">选择归类</option>
+              <option value="it">IT</option>
+              <option value="hr">HR</option>
+              <option value="finance">财务</option>
+              <option value="admin">行政</option>
+              <option value="other">其他</option>
+            </select>
+            <button class="btn" onclick="closeTicket()">结束工单</button>
+            <button class="btn btn-primary" style="margin-left:auto;" onclick="sendReply()">发送</button>
+          </div>
+          <div class="suggest-panel hidden" id="suggestPanel">
+            <div class="suggest-title">智能回复候选（点击填入输入框）</div>
+            <div class="suggest-item" onclick="fillSuggest(this)">1. 您好，VPN 认证失败通常是密码过期导致，请尝试在 OA 系统重置密码后重新连接。</div>
+            <div class="suggest-item" onclick="fillSuggest(this)">2. 请确认您使用的是公司分配的 VPN 客户端（版本 3.2+），旧版本可能导致认证失败。</div>
+            <div class="suggest-item" onclick="fillSuggest(this)">3. 如仍无法连接，请提供错误截图，我帮您进一步排查。也可拨打 IT 热线 8888。</div>
+          </div>`;
+      }
+    }
+
+    function acceptTicket() {
+      ticketState = 'processing';
+      document.getElementById('ticketStatus').textContent = '处理中';
+      document.getElementById('ticketStatus').className = 'tag tag-processing';
+      const btn = document.getElementById('acceptBtn');
+      if (btn) btn.remove();
+      renderInputArea('processing');
+    }
+
+    function toggleSuggest() {
+      document.getElementById('suggestPanel').classList.toggle('hidden');
+    }
+
+    function fillSuggest(el) {
+      const text = el.textContent.replace(/^\d+\.\s*/, '');
+      document.getElementById('replyInput').value = text;
+      document.getElementById('suggestPanel').classList.add('hidden');
+    }
+
+    function sendReply() {
+      const input = document.getElementById('replyInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const msgs = document.getElementById('chatMessages');
+      msgs.innerHTML += `
+        <div class="message-row agent">
+          <span class="message-label">坐席（我）</span>
+          <div class="message-bubble">${text}</div>
+        </div>`;
+      input.value = '';
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function closeTicket() {
+      if (confirm('确认结束此工单？结束后员工端将不可再发送消息。')) {
+        ticketState = 'completed';
+        document.getElementById('ticketStatus').textContent = '已完成';
+        document.getElementById('ticketStatus').className = 'tag tag-success';
+        renderInputArea('completed');
+      }
+    }
+  </script>
+</body>
+</html>

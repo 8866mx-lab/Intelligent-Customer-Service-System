@@ -1,0 +1,844 @@
+{
+  "project": "智能客服系统",
+  "project_type": "web",
+  "created": "2026-06-06",
+  "source_files": {
+    "prd": "docs/PRD.md",
+    "plan": "docs/Plan.md",
+    "api_contracts": "docs/api-contracts.md"
+  },
+  "external_services": [
+    {
+      "name": "百炼 LLM (qwen-plus)",
+      "required": true,
+      "config_keys": ["DASHSCOPE_API_KEY", "LLM_BASE_URL", "LLM_MODEL"],
+      "tester_access_required": "用户提供的 DASHSCOPE_API_KEY，具备 qwen-plus 调用额度",
+      "fallback_allowed": true,
+      "status": "confirmed"
+    },
+    {
+      "name": "百炼 Embedding (text-embedding-v3)",
+      "required": true,
+      "config_keys": ["DASHSCOPE_API_KEY", "EMBEDDING_MODEL"],
+      "tester_access_required": "同源 DASHSCOPE_API_KEY",
+      "fallback_allowed": true,
+      "status": "confirmed"
+    },
+    {
+      "name": "百炼 Rerank (gte-rerank)",
+      "required": true,
+      "config_keys": ["DASHSCOPE_API_KEY", "RERANK_MODEL"],
+      "tester_access_required": "同源 DASHSCOPE_API_KEY",
+      "fallback_allowed": true,
+      "status": "confirmed"
+    },
+    {
+      "name": "SQLite",
+      "required": true,
+      "config_keys": ["DATABASE_URL"],
+      "tester_access_required": "本地 sqlite 文件读写",
+      "fallback_allowed": false,
+      "status": "confirmed"
+    },
+    {
+      "name": "本地文件存储",
+      "required": true,
+      "config_keys": ["UPLOAD_DIR"],
+      "tester_access_required": "本地 uploads 目录读写",
+      "fallback_allowed": false,
+      "status": "confirmed"
+    },
+    {
+      "name": "WebSocket",
+      "required": true,
+      "config_keys": [],
+      "tester_access_required": "本地 FastAPI WebSocket 连接",
+      "fallback_allowed": true,
+      "status": "confirmed"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "前端工程初始化与 AppShell 骨架",
+      "type": "frontend",
+      "description": "初始化 frontend/（Vite + React 18 + TS + Ant Design 5 + react-router-dom v6 + Zustand + Axios）。实现 AppShell 顶部导航（员工端/坐席端/知识库 Tab + 用户下拉）、路由骨架（/login、/employee、/agent、/knowledge）、Mock 鉴权守卫（localStorage Mock Token）。配置 VITE_USE_MOCK=true、VITE_API_BASE_URL=/api；vite.config.ts 预置 /api 与 /ws 代理指向 8099。Mock 数据目录 frontend/src/mocks/。",
+      "source_feature": "AppShell",
+      "acceptanceCriteria": [
+        "用户在浏览器打开前端地址，未登录时自动进入登录页",
+        "用户通过 Mock 登录后，顶部导航显示「员工端」「坐席端」「知识库」三个 Tab 和用户名下拉菜单",
+        "用户点击顶部 Tab 可在员工端、坐席端、知识库三个页面路由间切换，布局与 docs/prototypes/ 原型 Shell 一致"
+      ],
+      "technicalChecks": [
+        "cd frontend && npm run type-check 通过",
+        "cd frontend && npm run lint 通过",
+        "cd frontend && npm run build 通过",
+        "frontend/vite.config.ts 已配置 server.proxy['/api'] 指向 http://localhost:8099",
+        "frontend/vite.config.ts 已配置 server.proxy['/ws'] 且 ws: true",
+        "frontend/.env 中 VITE_API_BASE_URL 为相对路径 /api，未写完整后端 URL",
+        "响应式布局在 1440px 与 1280px 视口下无严重错位"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": [],
+        "services": [],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": [],
+      "dependencies": [],
+      "priority": 1,
+      "rules_files": ["dev-standards/frontend.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": false
+    },
+    {
+      "id": "T-002",
+      "title": "P01 登录页 Mock 实现",
+      "type": "frontend",
+      "description": "实现 P01 登录页（/login）：居中卡片布局、账号密码表单、登录/错误提示。通过 Mock 调用 POST /api/auth/login 与 GET /api/auth/me，数据格式对齐 api-contracts.md。Mock Token 存 localStorage，已登录访问 /login 自动跳转 /employee。含退出登录清除 Mock 态。",
+      "source_feature": "F-01-01,F-01-02,F-01-03",
+      "acceptanceCriteria": [
+        "用户在登录页看到居中卡片、账号输入框、密码输入框和登录按钮，布局与 docs/prototypes/01-login.html 一致",
+        "用户输入 Mock 测试账号密码并点击登录，页面跳转到员工端，顶部导航显示用户名",
+        "用户点击顶部用户下拉中的退出登录，页面回到登录页且需重新输入账号密码",
+        "用户已 Mock 登录状态下直接访问登录页地址，页面自动跳转到员工端"
+      ],
+      "technicalChecks": [
+        "cd frontend && npm run type-check 通过",
+        "cd frontend && npm run lint 通过",
+        "cd frontend && npm run build 通过",
+        "Mock 登录响应字段与 api-contracts.md POST /api/auth/login 一致",
+        "VITE_USE_MOCK=true 时登录全流程可走通，未请求真实后端"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": ["/login"],
+        "services": ["authService"],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": [],
+      "dependencies": ["T-001"],
+      "priority": 2,
+      "rules_files": ["dev-standards/frontend.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": true
+    },
+    {
+      "id": "T-003",
+      "title": "P02 员工端 Mock 实现",
+      "type": "frontend",
+      "description": "实现 P02 员工端（/employee）：左栏 ConversationList 历史会话、右栏对话流 ChatBubble + CitationCard、输入框、新建会话、转人工按钮。Mock 数据覆盖 GET/POST /api/conversations、GET /api/conversations/{id}、POST messages、POST transfer。已完成会话输入区只读。",
+      "source_feature": "F-02-01,F-02-02,F-02-03,F-02-04,F-02-05,F-02-06,F-02-07",
+      "acceptanceCriteria": [
+        "用户在员工端左侧看到按时间排列的历史会话列表，右侧为对话区域和底部输入框，布局与 docs/prototypes/02-employee.html 一致",
+        "用户点击左侧某条未完成会话，右侧展示该会话 Mock 消息气泡（用户/AI/坐席三色区分），AI 回答内嵌引用来源卡片",
+        "用户在输入框输入问题并点击发送，本页面对话区追加用户气泡和 AI 回复气泡（含引用卡片或反问占位）",
+        "用户点击「新建会话」，对话区清空并展示新会话空白状态",
+        "用户选择状态为已完成的会话时，底部输入区变为只读提示且无法发送消息",
+        "用户点击「转人工」并确认后，本页面展示已进入排队/转人工的 Mock 状态提示"
+      ],
+      "technicalChecks": [
+        "cd frontend && npm run type-check 通过",
+        "cd frontend && npm run lint 通过",
+        "cd frontend && npm run build 通过",
+        "Mock 会话/消息数据结构符合 api-contracts.md conversations 与 messages 契约",
+        "CitationCard 引用来源卡片已实现（文档名+片段预览），非纯文本占位",
+        "固定高度列表项在浏览器中文字不被垂直截断（容器高度预留 ≥20% 缓冲）"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": ["/employee"],
+        "services": ["conversationService"],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": [],
+      "dependencies": ["T-002"],
+      "priority": 3,
+      "rules_files": ["dev-standards/frontend.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": true
+    },
+    {
+      "id": "T-004",
+      "title": "P03 坐席端 Mock 实现",
+      "type": "frontend",
+      "description": "实现 P03 坐席端（/agent）：左栏 TicketList 按待处理/处理中/已完成分组、右栏工单对话与操作面板。Mock tickets API、suggest API。含接单、人工回复、智能回复候选面板（3条，点击填入输入框须手动确认发送）、归类标签、结束工单。",
+      "source_feature": "F-03-01,F-03-02,F-03-03,F-03-04,F-03-05,F-03-06,F-03-07,F-03-08",
+      "acceptanceCriteria": [
+        "用户在坐席端左侧看到待处理、处理中、已完成三组工单列表，右侧为对话与操作区，布局与 docs/prototypes/03-agent.html 一致",
+        "用户点击待处理工单并点击「接单」，该工单从待处理列表移至处理中列表，右侧展示完整对话历史（含 AI 阶段消息）",
+        "用户在处理中工单输入文字并点击发送，本页面对话区追加坐席气泡",
+        "用户点击「智能回复」，面板展示 3 条 Mock 候选建议；用户选中一条后内容填入输入框，须再次点击发送才会出现在对话区（不自动发送）",
+        "用户为工单选择预设分类标签（IT/HR/财务/行政/其他）并保存，工单卡片显示对应分类",
+        "用户点击「结束工单」，该工单移至已完成列表且本页输入区变为只读"
+      ],
+      "technicalChecks": [
+        "cd frontend && npm run type-check 通过",
+        "cd frontend && npm run lint 通过",
+        "cd frontend && npm run build 通过",
+        "Mock 工单/建议响应符合 api-contracts.md tickets 与 suggest 契约",
+        "智能回复候选点击后仅填入输入框，无自动发送逻辑"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": ["/agent"],
+        "services": ["ticketService"],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": [],
+      "dependencies": ["T-003"],
+      "priority": 4,
+      "rules_files": ["dev-standards/frontend.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": true
+    },
+    {
+      "id": "T-005",
+      "title": "P04 知识库 Mock 实现",
+      "type": "frontend",
+      "description": "实现 P04 知识库（/knowledge）：Upload.Dragger 限 .md、KbTable 文件列表与入库状态、入库详情弹窗（切块数/QA数/四库状态）、删除确认。Mock kb/files API。",
+      "source_feature": "F-04-01,F-04-02,F-04-03,F-04-04,F-04-05,F-04-06",
+      "acceptanceCriteria": [
+        "用户在知识库页面上方看到 .md 文件上传区域，下方为文件列表表格，布局与 docs/prototypes/04-knowledge.html 一致",
+        "用户选择 .md 文件上传后，列表新增一行且状态从处理中变为已完成（Mock 模拟）",
+        "用户点击某文件的入库详情，弹窗展示切块数、QA 数和向量/关键词/Metadata/QA 四库状态",
+        "用户点击删除并确认后，该文件从列表中消失",
+        "用户尝试上传非 .md 文件时，页面提示仅支持 .md 格式"
+      ],
+      "technicalChecks": [
+        "cd frontend && npm run type-check 通过",
+        "cd frontend && npm run lint 通过",
+        "cd frontend && npm run build 通过",
+        "Mock kb_file 数据结构符合 api-contracts.md GET /api/kb/files 契约",
+        "上传组件限制 accept 为 .md"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": ["/knowledge"],
+        "services": ["kbService"],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": [],
+      "dependencies": ["T-004"],
+      "priority": 5,
+      "rules_files": ["dev-standards/frontend.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": true
+    },
+    {
+      "id": "T-006",
+      "title": "B00 后端基础设施脚手架",
+      "type": "backend",
+      "description": "初始化 backend/ 基于 pycore：main.py 使用 APIServer、core/config.py 使用 ConfigManager 从 .env 读取配置（无硬编码密钥）、复制 pyproject.toml 工具链、GET /health、CORS 允许 5199/5175。目录结构 backend/src/api、services、db、models。httpx 客户端 trust_env=False。",
+      "source_feature": "B00",
+      "acceptanceCriteria": [
+        "backend/src/main.py 使用 pycore.api.APIServer 创建应用，未自行重写 FastAPI 实例",
+        "backend/src/core/config.py 使用 pycore.core.ConfigManager，敏感配置从 .env 读取且无硬编码密钥",
+        "pyproject.toml 已配置 ruff、mypy、pytest；pycore/ 未纳入业务代码质量门禁",
+        "GET /health 返回 200 且 data.status 为 ok",
+        "CORS 中间件已注册，允许 localhost/127.0.0.1 的 5199 与 5175 端口"
+      ],
+      "technicalChecks": [
+        "$PY -m ruff check backend/src backend/tests 通过",
+        "$PY -m mypy backend/src backend/tests 通过",
+        "cd backend && PYTHONPATH=.. $PY -m uvicorn src.main:app --host 127.0.0.1 --port 8099 可短时启动",
+        "curl http://127.0.0.1:8099/health 返回 code 200",
+        "DashScope/httpx 客户端显式 trust_env=False，禁止裸 httpx.get/post"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": [],
+        "services": [],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": [],
+      "dependencies": ["T-005"],
+      "priority": 6,
+      "rules_files": ["dev-standards/backend-dev.md", "dev-standards/backend-layers.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": false
+    },
+    {
+      "id": "T-007",
+      "title": "B01 数据库模型与初始化",
+      "type": "backend",
+      "description": "基于 pycore db 模板扩展 backend/src/db/models.py 与 session.py，创建 users、user_profile、conversations、messages、tickets、kb_files、kb_vectors、kb_keywords、kb_metadata、kb_qa 表。scripts/init_db.py 初始化 SQLite 并写入种子用户。",
+      "source_feature": "B01",
+      "acceptanceCriteria": [
+        "backend/src/db/models.py 和 session.py 基于 pycore 模板扩展，包含 PRD 第7章全部业务实体",
+        "cd backend && PYTHONPATH=.. $PY scripts/init_db.py 执行成功",
+        "真实 SQLite 文件存在（默认 data/app.db），目标业务表和种子用户已落盘",
+        "users 表含可登录测试账号，password_hash 非明文存储"
+      ],
+      "technicalChecks": [
+        "$PY -m ruff check backend/src backend/tests 通过",
+        "$PY -m mypy backend/src backend/tests 通过",
+        "$PY -m pytest backend/tests -k db 通过（如有）",
+        "cd backend && PYTHONPATH=.. $PY scripts/init_db.py 通过",
+        "SQLite 文件、表结构、seed 数据真实存在，不只依赖测试夹具"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": [],
+        "services": [],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": ["SQLite"],
+      "dependencies": ["T-006"],
+      "priority": 7,
+      "rules_files": ["dev-standards/backend-dev.md", "dev-standards/backend-layers.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": false
+    },
+    {
+      "id": "T-008",
+      "title": "B02 JWT 认证模块",
+      "type": "backend",
+      "description": "实现 backend/src/api/deps.py 路由级认证依赖（get_current_user）、POST /api/auth/login、POST /api/auth/logout、GET /api/auth/me。JWT 从 .env 读取 JWT_SECRET/JWT_EXPIRE_HOURS。无凭证/无效凭证 401，统一错误格式。",
+      "source_feature": "B02,F-01-01,F-01-02,F-01-03",
+      "acceptanceCriteria": [
+        "backend/src/api/deps.py 基于 pycore 模板扩展，get_current_user 作为路由级 Depends 鉴权",
+        "POST /api/auth/login 正确账号密码返回 access_token 与 user 信息；错误凭证返回 code 1001",
+        "GET /api/auth/me 携带有效 Bearer Token 返回当前用户；无效/过期 Token 返回 code 1002",
+        "无凭证访问受保护路由返回 401 统一错误格式"
+      ],
+      "technicalChecks": [
+        "$PY -m ruff check backend/src backend/tests 通过",
+        "$PY -m mypy backend/src backend/tests 通过",
+        "$PY -m pytest backend/tests -k auth 通过",
+        "cd backend && PYTHONPATH=.. $PY -m uvicorn src.main:app --host 127.0.0.1 --port 8099 可短时启动",
+        "curl 登录/me/401 场景符合 api-contracts.md"
+      ],
+      "frontendIntegration": {
+        "required": false,
+        "pages": [],
+        "services": [],
+        "realApiEndpoints": [],
+        "mockExitCriteria": []
+      },
+      "externalServices": [],
+      "dependencies": ["T-007"],
+      "priority": 8,
+      "rules_files": ["dev-standards/backend-dev.md", "dev-standards/backend-layers.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": false
+    },
+    {
+      "id": "T-009",
+      "title": "用户登录认证功能闭环",
+      "type": "integration",
+      "description": "后端 B02 与前端 P01 联调：authService 切真实 API，VITE_USE_MOCK=false 下登录/登出/me/Token 持久化/路由守卫。单账号可访问全部页面，不做角色隔离。",
+      "source_feature": "F-01-01,F-01-02,F-01-03",
+      "acceptanceCriteria": [
+        "用户在登录页输入种子账号密码并点击登录，页面跳转到员工端且顶部显示真实用户名",
+        "用户刷新浏览器后仍保持登录状态，无需重新输入密码",
+        "用户点击退出登录后回到登录页，再次访问受保护页面会跳转到登录页",
+        "用户登录后可通过顶部 Tab 访问员工端、坐席端、知识库全部页面（单账号无角色限制）"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k auth 通过",
+        "VITE_USE_MOCK=false 时登录请求命中真实 POST /api/auth/login，非 frontend/src/mocks",
+        "frontend/vite.config.ts /api 代理指向 8099 已验证",
+        "页面无 [Mock] 账号提示或 Mock-only 登录文案",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/login", "/employee", "/agent", "/knowledge"],
+        "services": ["authService", "authStore"],
+        "realApiEndpoints": [
+          "POST /api/auth/login",
+          "POST /api/auth/logout",
+          "GET /api/auth/me"
+        ],
+        "mockExitCriteria": [
+          "authService 在 VITE_USE_MOCK=false 时调用真实 /api/auth/*",
+          "登录页与 AppShell 路由守卫使用真实 JWT，localStorage 存真实 access_token"
+        ]
+      },
+      "externalServices": [],
+      "dependencies": ["T-008", "T-002"],
+      "priority": 9,
+      "rules_files": ["dev-standards/frontend.md", "dev-standards/backend-dev.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "",
+      "user_gate": true
+    },
+    {
+      "id": "T-010",
+      "title": "知识库上传入库与删除闭环",
+      "type": "integration",
+      "description": "实现 B04+B12：POST /api/kb/upload（仅.md）、GET /api/kb/files、GET /api/kb/files/{id}、DELETE、POST retry。异步切块+四库并行写入（向量/关键词/Metadata/QA），状态轮询。前端 kbService 切真实 API。",
+      "source_feature": "F-04-01,F-04-02,F-04-03,F-04-04,F-04-05,F-04-06",
+      "acceptanceCriteria": [
+        "用户在知识库页面上传 .md 文件后，列表出现新记录且状态从处理中变为已完成",
+        "用户点击已完成文件的入库详情，可看到切块数、QA 数和四库均为已完成状态",
+        "用户删除某文件并确认后，该文件从列表消失且无法再检索到",
+        "用户上传非 .md 文件时，页面提示仅支持 .md 格式"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k kb 通过",
+        "VITE_USE_MOCK=false 时上传/列表请求命中真实 /api/kb/*",
+        "真实 .md 上传后 SQLite 四库表有对应数据落盘",
+        "DashScope Embedding/LLM 调用 trust_env=False；Key 自 backend/.env 读取未硬编码",
+        "入库失败时 status=failed 且 error_message 可见，支持 retry",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/knowledge"],
+        "services": ["kbService"],
+        "realApiEndpoints": [
+          "POST /api/kb/upload",
+          "GET /api/kb/files",
+          "GET /api/kb/files/{file_id}",
+          "DELETE /api/kb/files/{file_id}",
+          "POST /api/kb/files/{file_id}/retry"
+        ],
+        "mockExitCriteria": [
+          "kbService 在 VITE_USE_MOCK=false 时调用真实 /api/kb/*",
+          "知识库页无 [Mock] 文件数据残留"
+        ]
+      },
+      "externalServices": [
+        "百炼 LLM (qwen-plus)",
+        "百炼 Embedding (text-embedding-v3)",
+        "SQLite",
+        "本地文件存储"
+      ],
+      "dependencies": ["T-009", "T-005"],
+      "priority": 10,
+      "rules_files": [
+        "dev-standards/frontend.md",
+        "dev-standards/backend-dev.md",
+        "dev-standards/backend-layers.md",
+        "dev-standards/backend-plugin.md"
+      ],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "用户门禁确认通过；Bugfix 批量 Embedding 修复入库失败。",
+      "user_gate": true
+    },
+    {
+      "id": "T-011",
+      "title": "会话管理功能闭环",
+      "type": "integration",
+      "description": "实现 B03：GET/POST /api/conversations、GET /api/conversations/{id}。前端员工端历史列表、新建会话、切换会话、已完成只读。",
+      "source_feature": "F-02-04,F-02-05,F-02-06,F-02-07",
+      "acceptanceCriteria": [
+        "用户在员工端左侧看到从后端加载的真实历史会话列表",
+        "用户点击「新建会话」，左侧出现新会话且右侧为空白对话区",
+        "用户切换不同会话时，右侧展示该会话的真实消息历史",
+        "用户选择状态为已完成的会话时，底部输入区变为只读且无法发送消息"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k conversation 通过",
+        "VITE_USE_MOCK=false 时会话 CRUD 命中真实 /api/conversations/*",
+        "已完成会话 POST messages 返回 code 2002",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/employee"],
+        "services": ["conversationService"],
+        "realApiEndpoints": [
+          "GET /api/conversations",
+          "POST /api/conversations",
+          "GET /api/conversations/{conversation_id}"
+        ],
+        "mockExitCriteria": [
+          "conversationService 列表/详情/新建在 VITE_USE_MOCK=false 走真实 API",
+          "员工端会话列表与切换不再使用 Mock 数据"
+        ]
+      },
+      "externalServices": ["SQLite"],
+      "dependencies": ["T-009", "T-003"],
+      "priority": 11,
+      "rules_files": ["dev-standards/frontend.md", "dev-standards/backend-dev.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "用户门禁确认通过。",
+      "user_gate": true
+    },
+    {
+      "id": "T-012",
+      "title": "AI 问答与多轮对话 RAG 闭环",
+      "type": "integration",
+      "description": "实现 B05+B06+B07：RAG 六步链路（Query改写→QA直答→意图识别→槽位填充→RRF混合检索→重排→生成）、POST /api/conversations/{id}/messages、3轮短期记忆+长期画像。前端展示 AI 气泡、CitationCard、反问。",
+      "source_feature": "F-02-01,F-02-02",
+      "acceptanceCriteria": [
+        "用户在员工端选中 AI 对话中的会话，输入问题并发送，页面展示 AI 回复气泡",
+        "当知识库有相关内容时，AI 回复内展示引用来源卡片（文档名与片段预览）",
+        "用户在同一会话连续提问 3 轮，AI 回复能体现上下文连贯（多轮记忆）",
+        "用户输入意图模糊的问题时，AI 以反问形式回复而非强行检索"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k rag 通过",
+        "VITE_USE_MOCK=false 时 POST messages 命中真实后端并返回 metadata.response_type",
+        "百炼 LLM/Embedding/Rerank 真实调用（DASHSCOPE_API_KEY 已配置）；失败时有清晰错误非静默吞错",
+        "httpx 客户端 trust_env=False",
+        "QA 直答阈值 0.8、短期记忆 3 轮符合 PRD",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/employee"],
+        "services": ["conversationService"],
+        "realApiEndpoints": [
+          "POST /api/conversations/{conversation_id}/messages"
+        ],
+        "mockExitCriteria": [
+          "发送消息在 VITE_USE_MOCK=false 走真实 RAG API",
+          "AI 回复展示真实 citations 或 clarify 反问，无 Mock 固定文案"
+        ]
+      },
+      "externalServices": [
+        "百炼 LLM (qwen-plus)",
+        "百炼 Embedding (text-embedding-v3)",
+        "百炼 Rerank (gte-rerank)",
+        "SQLite"
+      ],
+      "dependencies": ["T-010", "T-011"],
+      "priority": 12,
+      "rules_files": [
+        "dev-standards/frontend.md",
+        "dev-standards/backend-dev.md",
+        "dev-standards/backend-layers.md",
+        "dev-standards/backend-plugin.md"
+      ],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "RAG 闭环与发送 UX 修复已完成；百炼 Key 配置后可全链路验收。",
+      "user_gate": true
+    },
+    {
+      "id": "T-013",
+      "title": "转人工功能闭环",
+      "type": "integration",
+      "description": "实现 B08 转人工部分：POST /api/conversations/{id}/transfer，创建 pending 工单，会话状态变 queuing。前端员工端转人工按钮联调。",
+      "source_feature": "F-02-03",
+      "acceptanceCriteria": [
+        "用户在员工端 AI 对话中点击「转人工」并确认，本页面展示已进入排队/转人工的成功提示",
+        "用户转人工后，该会话在左侧列表的状态标签变为排队中",
+        "用户对已完成会话点击转人工时，页面提示不可操作"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k transfer 通过",
+        "VITE_USE_MOCK=false 时 transfer 命中真实 POST /api/conversations/{id}/transfer",
+        "转人工后 tickets 表新增 pending 记录且 conversation.status=queuing",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/employee"],
+        "services": ["conversationService"],
+        "realApiEndpoints": [
+          "POST /api/conversations/{conversation_id}/transfer"
+        ],
+        "mockExitCriteria": [
+          "转人工在 VITE_USE_MOCK=false 走真实 API",
+          "员工端展示真实 ticket 创建结果"
+        ]
+      },
+      "externalServices": ["SQLite"],
+      "dependencies": ["T-012"],
+      "priority": 13,
+      "rules_files": ["dev-standards/frontend.md", "dev-standards/backend-dev.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "用户门禁通过；已完成会话不可转人工由前后端+单测覆盖，UI 待 T-015 结束工单后验收。",
+      "user_gate": true
+    },
+    {
+      "id": "T-014",
+      "title": "坐席工单列表查看与接单闭环",
+      "type": "integration",
+      "description": "实现 B08 工单查询+接单：GET /api/tickets、GET /api/tickets/{id}、POST /api/tickets/{id}/accept。前端坐席端工单分组列表、详情、接单。",
+      "source_feature": "F-03-01,F-03-02,F-03-03,F-03-08",
+      "acceptanceCriteria": [
+        "用户在坐席端左侧看到从后端加载的待处理、处理中、已完成工单分组列表",
+        "用户点击待处理工单，右侧展示该工单完整对话历史（含员工提问与 AI 回复）",
+        "用户点击「接单」，该工单从待处理移至处理中列表，且可开始回复"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k ticket 通过",
+        "VITE_USE_MOCK=false 时 tickets API 命中真实后端",
+        "接单后 ticket.status=processing、conversation.status=processing",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/agent"],
+        "services": ["ticketService"],
+        "realApiEndpoints": [
+          "GET /api/tickets",
+          "GET /api/tickets/{ticket_id}",
+          "POST /api/tickets/{ticket_id}/accept"
+        ],
+        "mockExitCriteria": [
+          "坐席端工单列表/详情/接单在 VITE_USE_MOCK=false 走真实 API"
+        ]
+      },
+      "externalServices": ["SQLite"],
+      "dependencies": ["T-013", "T-004"],
+      "priority": 14,
+      "rules_files": ["dev-standards/frontend.md", "dev-standards/backend-dev.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "用户继续开发前验收通过；坐席列表/详情/接单联调完成。",
+      "user_gate": true
+    },
+    {
+      "id": "T-015",
+      "title": "坐席人工回复与智能回复闭环",
+      "type": "integration",
+      "description": "实现 B09：POST /api/tickets/{id}/messages、POST /api/tickets/{id}/suggest（RAG 生成3条候选）。前端坐席回复与智能回复面板；智能回复须选中编辑后手动发送，禁止自动发送。",
+      "source_feature": "F-03-04,F-03-05",
+      "acceptanceCriteria": [
+        "用户在坐席端处理中工单输入文字并点击发送，本页面对话区追加坐席回复气泡",
+        "用户点击「智能回复」，面板展示 3 条由 AI 生成的候选建议",
+        "用户选中一条智能回复候选后，内容填入输入框；用户须再次点击发送，该消息才出现在对话区（不会自动发送）"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k 'ticket_message or suggest' 通过",
+        "VITE_USE_MOCK=false 时 messages/suggest 命中真实后端",
+        "suggest 走 RAG 链路返回 3 条 suggestions",
+        "百炼 API 真实调用或明确标注降级；httpx trust_env=False",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/agent"],
+        "services": ["ticketService"],
+        "realApiEndpoints": [
+          "POST /api/tickets/{ticket_id}/messages",
+          "POST /api/tickets/{ticket_id}/suggest"
+        ],
+        "mockExitCriteria": [
+          "坐席发送与智能回复在 VITE_USE_MOCK=false 走真实 API",
+          "智能回复候选无自动发送逻辑"
+        ]
+      },
+      "externalServices": [
+        "百炼 LLM (qwen-plus)",
+        "百炼 Embedding (text-embedding-v3)",
+        "百炼 Rerank (gte-rerank)",
+        "SQLite"
+      ],
+      "dependencies": ["T-014"],
+      "priority": 15,
+      "rules_files": [
+        "dev-standards/frontend.md",
+        "dev-standards/backend-dev.md",
+        "dev-standards/backend-layers.md",
+        "dev-standards/backend-plugin.md"
+      ],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "用户继续开发前验收通过；坐席发送与智能回复联调完成。",
+      "user_gate": true
+    },
+    {
+      "id": "T-016",
+      "title": "工单归类与结束闭环",
+      "type": "integration",
+      "description": "实现 B10：PATCH /api/tickets/{id} 归类与结束。前端坐席归类标签、结束工单；结束后员工端会话只读。",
+      "source_feature": "F-03-06,F-03-07,F-02-05",
+      "acceptanceCriteria": [
+        "用户在坐席端为处理中工单选择预设分类（IT/HR/财务/行政/其他）并保存，工单卡片显示对应分类",
+        "用户点击「结束工单」，该工单移至已完成列表且坐席端输入区变为只读",
+        "工单结束后，员工端打开对应该会话时，底部输入区为只读且无法发送消息"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k 'ticket_patch or complete' 通过",
+        "VITE_USE_MOCK=false 时 PATCH /api/tickets/{id} 命中真实后端",
+        "结束后 ticket.status=completed、conversation.status=completed",
+        "员工端已完成会话 POST messages 返回 2002",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/agent", "/employee"],
+        "services": ["ticketService", "conversationService"],
+        "realApiEndpoints": [
+          "PATCH /api/tickets/{ticket_id}"
+        ],
+        "mockExitCriteria": [
+          "归类与结束工单在 VITE_USE_MOCK=false 走真实 API",
+          "员工端只读状态由真实 conversation.status 驱动"
+        ]
+      },
+      "externalServices": ["SQLite"],
+      "dependencies": ["T-015"],
+      "priority": 16,
+      "rules_files": ["dev-standards/frontend.md", "dev-standards/backend-dev.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "PATCH 归类/结束已实现；员工端 completed 只读。",
+      "user_gate": true
+    },
+    {
+      "id": "T-017",
+      "title": "WebSocket 实时消息推送闭环",
+      "type": "integration",
+      "description": "实现 B11：WS /ws/messages?token=，推送 new_message、ticket_status_changed、ticket_created。前端 ws 客户端连接、重连；坐席回复后员工端实时收到，结束工单后员工端状态实时更新。",
+      "source_feature": "F-03-04,F-02-03",
+      "acceptanceCriteria": [
+        "用户同时在员工端和坐席端页面（同一账号两个标签页），坐席发送人工回复后，员工端对话区实时出现该坐席消息，无需手动刷新",
+        "用户转人工创建工单后，坐席端待处理列表实时出现新工单（或短轮询兜底后可见）",
+        "用户结束工单后，员工端该会话输入区实时变为只读状态"
+      ],
+      "technicalChecks": [
+        "$PY -m pytest backend/tests -k websocket 通过",
+        "frontend/vite.config.ts /ws 代理 ws:true 已配置",
+        "前端 WebSocket 连接使用相对路径 /ws/messages，未硬编码 ws://localhost:8099",
+        "VITE_USE_MOCK=false 时 new_message 与 ticket_status_changed 事件真实推送",
+        "断连后有重连或轮询兜底逻辑",
+        "npm run type-check && npm run lint && npm run build 通过"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/employee", "/agent"],
+        "services": ["wsService", "conversationService", "ticketService"],
+        "realApiEndpoints": [
+          "WS /ws/messages"
+        ],
+        "mockExitCriteria": [
+          "员工端与坐席端在 VITE_USE_MOCK=false 时建立真实 WebSocket",
+          "不再使用 Mock 模拟推送事件"
+        ]
+      },
+      "externalServices": ["WebSocket"],
+      "dependencies": ["T-016"],
+      "priority": 17,
+      "rules_files": ["dev-standards/frontend.md", "dev-standards/backend-dev.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "WS 推送与前端 wsService 已实现；双标签页实时验收通过。",
+      "user_gate": true
+    },
+    {
+      "id": "T-018",
+      "title": "全系统 E2E 回归与启动文档",
+      "type": "integration",
+      "description": "完整路径回归：登录→上传知识库→员工 RAG 提问→转人工→坐席接单→智能回复确认发送→归类结束→只读锁定。输出 docs/startup.md。MVP 24 项功能全覆盖检查。",
+      "source_feature": "MVP-ALL",
+      "acceptanceCriteria": [
+        "用户按启动文档启动前后端后，可完成完整业务路径：登录 → 上传 .md 知识库并入库成功 → 员工端提问获得 AI 回答 → 转人工 → 坐席接单并发送回复 → 员工端实时收到 → 坐席结束工单 → 员工端会话变只读",
+        "用户登录后可访问员工端、坐席端、知识库全部页面，全程无 [Mock] 残留提示",
+        "docs/startup.md 存在且包含环境要求、启动命令、默认端口（验收 5175/8003，开发 5199/8099）与测试账号说明"
+      ],
+      "technicalChecks": [
+        "全链路 VITE_USE_MOCK=false 走通",
+        "backend GET /health 正常",
+        "frontend npm run build 通过",
+        "$PY -m pytest backend/tests 通过",
+        "docs/startup.md 已生成，未包含真实 API Key",
+        "MVP 24 项功能（F-01~F-04）均有对应实现痕迹"
+      ],
+      "frontendIntegration": {
+        "required": true,
+        "pages": ["/login", "/employee", "/agent", "/knowledge"],
+        "services": ["authService", "conversationService", "ticketService", "kbService", "wsService"],
+        "realApiEndpoints": ["全部 api-contracts.md REST + WS"],
+        "mockExitCriteria": [
+          "全流程无 Mock 分支被默认触发",
+          "VITE_USE_MOCK 默认为 false 或生产构建不依赖 Mock"
+        ]
+      },
+      "externalServices": [
+        "百炼 LLM (qwen-plus)",
+        "百炼 Embedding (text-embedding-v3)",
+        "百炼 Rerank (gte-rerank)",
+        "SQLite",
+        "本地文件存储",
+        "WebSocket"
+      ],
+      "dependencies": ["T-017"],
+      "priority": 18,
+      "rules_files": ["dev-standards/frontend.md", "dev-standards/backend-dev.md"],
+      "status": "passed",
+      "developer_id": null,
+      "tester_id": null,
+      "retry_count": 0,
+      "blocked": false,
+      "notes": "startup.md 已完善；pytest 40/40、npm build 通过；待用户按 E2E 路径最终确认。",
+      "user_gate": true
+    }
+  ]
+}

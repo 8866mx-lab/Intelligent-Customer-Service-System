@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知识库 — 智能客服系统</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="shell-header">
+      <div class="shell-logo">智能客服</div>
+      <nav class="shell-nav">
+        <a href="02-employee.html">员工端</a>
+        <a href="03-agent.html">坐席端</a>
+        <a href="04-knowledge.html" class="active">知识库</a>
+      </nav>
+      <div class="shell-user">张三 ▼</div>
+    </header>
+
+    <div class="kb-page">
+      <h1 class="kb-title">知识库管理</h1>
+
+      <div class="upload-zone" onclick="simulateUpload()">
+        <div class="upload-icon">📁</div>
+        <div>点击或拖拽 <strong>.md</strong> 文件到此区域上传</div>
+        <p>仅支持 Markdown 格式，单文件上传</p>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>文件名</th>
+            <th>上传时间</th>
+            <th>切块数</th>
+            <th>QA 数</th>
+            <th>向量库</th>
+            <th>关键词库</th>
+            <th>Metadata</th>
+            <th>QA 库</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="fileTable">
+          <tr>
+            <td><strong>员工手册.md</strong></td>
+            <td>2026-06-06 14:30</td>
+            <td>42</td>
+            <td>15</td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已完成</span></td>
+            <td class="table-actions">
+              <a href="#" onclick="showDetail('员工手册.md', 42, 15); return false;">详情</a>
+              <a href="#" style="color:var(--error);" onclick="return confirm('确认删除？')">删除</a>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>IT指南.md</strong></td>
+            <td>2026-06-06 14:25</td>
+            <td>28</td>
+            <td>8</td>
+            <td><span class="tag tag-processing">处理中</span></td>
+            <td><span class="tag tag-processing">处理中</span></td>
+            <td><span class="tag tag-processing">处理中</span></td>
+            <td><span class="tag tag-default">等待中</span></td>
+            <td><span class="tag tag-warning">处理中</span></td>
+            <td class="table-actions">
+              <a href="#">详情</a>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>财务报销规范.md</strong></td>
+            <td>2026-06-05 09:15</td>
+            <td>35</td>
+            <td>12</td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已入库</span></td>
+            <td><span class="tag tag-success">已完成</span></td>
+            <td class="table-actions">
+              <a href="#" onclick="showDetail('财务报销规范.md', 35, 12); return false;">详情</a>
+              <a href="#" style="color:var(--error);">删除</a>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>行政管理制度.md</strong></td>
+            <td>2026-06-04 16:40</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="tag tag-default">—</span></td>
+            <td><span class="tag tag-default">—</span></td>
+            <td><span class="tag tag-default">—</span></td>
+            <td><span class="tag tag-default">—</span></td>
+            <td><span class="tag tag-error" style="color:var(--error);background:#fff2f0;border-color:#ffccc7;">失败</span></td>
+            <td class="table-actions">
+              <a href="#" onclick="alert('错误：文件编码不支持，请使用 UTF-8 编码的 .md 文件'); return false;">查看错误</a>
+              <a href="#">重试</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function simulateUpload() {
+      const name = '会议室使用指南.md';
+      if (!confirm(`模拟上传文件：${name}\n\n确认后开始入库处理？`)) return;
+      const tbody = document.getElementById('fileTable');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><strong>${name}</strong></td>
+        <td>${new Date().toLocaleString('zh-CN')}</td>
+        <td>—</td><td>—</td>
+        <td><span class="tag tag-warning">处理中</span></td>
+        <td><span class="tag tag-default">等待中</span></td>
+        <td><span class="tag tag-default">等待中</span></td>
+        <td><span class="tag tag-default">等待中</span></td>
+        <td><span class="tag tag-warning">处理中</span></td>
+        <td class="table-actions"><a href="#">详情</a></td>`;
+      tbody.insertBefore(row, tbody.firstChild);
+      setTimeout(() => {
+        row.innerHTML = `
+          <td><strong>${name}</strong></td>
+          <td>${new Date().toLocaleString('zh-CN')}</td>
+          <td>18</td><td>6</td>
+          <td><span class="tag tag-success">已入库</span></td>
+          <td><span class="tag tag-success">已入库</span></td>
+          <td><span class="tag tag-success">已入库</span></td>
+          <td><span class="tag tag-success">已入库</span></td>
+          <td><span class="tag tag-success">已完成</span></td>
+          <td class="table-actions">
+            <a href="#" onclick="showDetail('${name}', 18, 6); return false;">详情</a>
+            <a href="#" style="color:var(--error);">删除</a>
+          </td>`;
+      }, 2000);
+    }
+
+    function showDetail(name, chunks, qa) {
+      alert(`入库详情：${name}\n\n切块数：${chunks}\nQA 抽取数：${qa}\n\n四库状态：\n• 向量库：已入库\n• 关键词库：已入库\n• Metadata 库：已入库\n• QA 库：已入库\n\n（原型演示）`);
+    }
+  </script>
+</body>
+</html>

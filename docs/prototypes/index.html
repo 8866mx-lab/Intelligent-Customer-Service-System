@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能客服系统 — 原型总览</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <!-- 已走快速路径：Design Spec 明确，直接生成高保真原型 -->
+  <div class="overview-page">
+    <h1 class="overview-title">智能客服系统 · 原型总览</h1>
+    <p class="overview-desc">桌面 Web 1440×900 · 方案 C 融合布局 · 共 4 个 MVP 界面</p>
+
+    <div class="overview-grid">
+      <div class="overview-card">
+        <div class="overview-card-header">
+          <h3>P01 登录页</h3>
+          <span class="tag tag-default">表单页</span>
+        </div>
+        <div class="overview-card-body">
+          账号密码登录，成功后进入员工端。<br>
+          居中卡片布局，宽 400px。
+        </div>
+        <div class="overview-card-footer">
+          <a href="01-login.html" class="btn btn-primary">查看原型 →</a>
+        </div>
+      </div>
+
+      <div class="overview-card">
+        <div class="overview-card-header">
+          <h3>P02 员工端</h3>
+          <span class="tag tag-processing">对话页</span>
+        </div>
+        <div class="overview-card-body">
+          AI 问答（RAG + 引用来源）、转人工、历史会话列表。<br>
+          左栏 280px 会话列表 + 右栏对话区。
+        </div>
+        <div class="overview-card-footer">
+          <a href="02-employee.html" class="btn btn-primary">查看原型 →</a>
+        </div>
+      </div>
+
+      <div class="overview-card">
+        <div class="overview-card-header">
+          <h3>P03 坐席端</h3>
+          <span class="tag tag-warning">工单页</span>
+        </div>
+        <div class="overview-card-body">
+          工单列表（待处理/处理中/已完成）、人工回复、智能回复、归类、结束工单。<br>
+          左栏 320px 工单分组 + 右栏对话与操作面板。
+        </div>
+        <div class="overview-card-footer">
+          <a href="03-agent.html" class="btn btn-primary">查看原型 →</a>
+        </div>
+      </div>
+
+      <div class="overview-card">
+        <div class="overview-card-header">
+          <h3>P04 知识库</h3>
+          <span class="tag tag-success">管理页</span>
+        </div>
+        <div class="overview-card-body">
+          上传 .md 文件、查看入库状态（向量/关键词/Metadata/QA 四库）。<br>
+          上传区 + 文件表格，单栏全宽布局。
+        </div>
+        <div class="overview-card-footer">
+          <a href="04-knowledge.html" class="btn btn-primary">查看原型 →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="overview-flow">
+      <h4>推荐演示路径（Flow Demo）</h4>
+      <ol>
+        <li><a href="01-login.html">登录页</a> → 输入账号密码 → 进入员工端</li>
+        <li><a href="02-employee.html">员工端</a> → 提问「请假流程」→ 查看 AI 引用回答 → 点击「转人工」</li>
+        <li><a href="03-agent.html">坐席端</a> → 接单 → 智能回复 → 发送 → 结束工单</li>
+        <li><a href="04-knowledge.html">知识库</a> → 上传 .md → 查看入库状态</li>
+      </ol>
+    </div>
+
+    <div class="overview-note">
+      <strong>说明：</strong>本目录为设计验证用 HTML 原型，非生产前端源码。顶部导航可在各页面间切换。详细交接说明见 <a href="README.md">README.md</a>。
+    </div>
+  </div>
+</body>
+</html>
